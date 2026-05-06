@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import nodemailer from "nodemailer";
 
 /* ─── Email subject builder ─── */
 function buildSubject(purpose: string, name: string): string {
@@ -84,6 +82,80 @@ function buildHtmlBody(data: Record<string, string>): string {
     </div>`;
 }
 
+/* ─── Check if SMTP is configured ─── */
+function isSmtpConfigured(): boolean {
+  return !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+/* ─── Save booking to database (non-critical) ─── */
+async function saveBooking(body: Record<string, string>): Promise<string | null> {
+  try {
+    const { db } = await import("@/lib/db");
+    const { name, dateOfBirth, country, purpose } = body;
+
+    const booking = await db.booking.create({
+      data: {
+        name,
+        dateOfBirth,
+        country,
+        purpose,
+        inquiryText: body.inquiryText || null,
+        insightFormat: body.insightFormat || null,
+        insightComment: body.insightComment || null,
+        sessionPlatform: body.sessionPlatform || null,
+        phoneNumber: body.phoneNumber || null,
+        sessionComment: body.sessionComment || null,
+      },
+    });
+
+    return booking.id;
+  } catch (dbErr) {
+    console.error("Database save failed:", dbErr);
+    return null;
+  }
+}
+
+/* ─── Send email via SMTP ─── */
+async function sendBookingEmail(
+  body: Record<string, string>,
+  purpose: string,
+  name: string,
+): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("SMTP credentials not configured — skipping email notification");
+    return false;
+  }
+
+  try {
+    const nodemailer = await import("nodemailer");
+
+    const transporter = nodemailer.default.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    const subject = buildSubject(purpose, name);
+    const html = buildHtmlBody(body);
+
+    await transporter.sendMail({
+      from: `"Nova Arcana LLC" <${process.env.SMTP_USER}>`,
+      to: "med.taha.khaldi@gmail.com",
+      subject,
+      html,
+    });
+
+    return true;
+  } catch (emailErr) {
+    console.error("Email sending failed:", emailErr);
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body: Record<string, string> = await req.json();
@@ -104,62 +176,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    /* ── Save to database ── */
-    const booking = await db.booking.create({
-      data: {
-        name,
-        dateOfBirth,
-        country,
-        purpose,
-        inquiryText: body.inquiryText || null,
-        insightFormat: body.insightFormat || null,
-        insightComment: body.insightComment || null,
-        sessionPlatform: body.sessionPlatform || null,
-        phoneNumber: body.phoneNumber || null,
-        sessionComment: body.sessionComment || null,
-      },
-    });
+    /* ── Save to database (non-critical — won't fail the request) ── */
+    const bookingId = await saveBooking(body);
 
-    /* ── Send email notification ── */
-    let emailSent = false;
-    const recipientEmail = "med.taha.khaldi@gmail.com";
+    /* ── Send email notification (non-critical — won't fail the request) ── */
+    const emailSent = await sendBookingEmail(body, purpose, name);
 
-    try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: false,
-        auth: {
-          user: process.env.SMTP_USER || "",
-          pass: process.env.SMTP_PASS || "",
-        },
-      });
-
-      const subject = buildSubject(purpose, name);
-      const html = buildHtmlBody(body);
-
-      await transporter.sendMail({
-        from: `"Nova Arcana LLC" <${process.env.SMTP_USER || "noreply@novaarcana.com"}>`,
-        to: recipientEmail,
-        subject,
-        html,
-      });
-
-      emailSent = true;
-
-      // Update booking record
-      await db.booking.update({
-        where: { id: booking.id },
-        data: { emailSent: true },
-      });
-    } catch (emailErr) {
-      console.error("Email sending failed:", emailErr);
-      // Booking is still saved even if email fails
-    }
-
+    /* ── Always return success as long as validation passes ── */
     return NextResponse.json({
       success: true,
-      bookingId: booking.id,
+      bookingId,
       emailSent,
     });
   } catch (err) {
