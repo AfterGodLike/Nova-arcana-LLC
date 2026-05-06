@@ -149,18 +149,9 @@ export default function Home() {
             animate="visible"
             className="flex flex-col items-center gap-6"
           >
-            <motion.div variants={fadeUp} custom={0}>
-              <Badge
-                variant="secondary"
-                className="text-amber-700 border-amber-300/50 bg-amber-50 px-3 py-1 text-xs font-medium"
-              >
-                US-Registered Digital Services Company
-              </Badge>
-            </motion.div>
-
             <motion.h1
               variants={fadeUp}
-              custom={1}
+              custom={0}
               className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight"
             >
               Clarity Through
@@ -170,7 +161,7 @@ export default function Home() {
 
             <motion.p
               variants={fadeUp}
-              custom={2}
+              custom={1}
               className="max-w-xl text-muted-foreground text-lg leading-relaxed"
             >
               Nova Arcana LLC provides spiritual guidance content, personal
@@ -180,7 +171,7 @@ export default function Home() {
 
             <motion.div
               variants={fadeUp}
-              custom={3}
+              custom={2}
               className="flex flex-col sm:flex-row gap-3 mt-2"
             >
               <Button
@@ -197,7 +188,7 @@ export default function Home() {
 
             <motion.div
               variants={fadeUp}
-              custom={4}
+              custom={3}
               className="flex items-center gap-6 mt-4 text-sm text-muted-foreground"
             >
               <span className="flex items-center gap-1.5">
