@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { BookingDialog } from "@/components/booking-dialog";
 import Image from "next/image";
 
 /* ──────────────────── animation helpers ──────────────────── */
@@ -78,6 +80,8 @@ const steps = [
 
 /* ════════════════════════════════════════════════════════════ */
 export default function Home() {
+  const [bookingOpen, setBookingOpen] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* ─── NAV ─── */}
@@ -111,10 +115,12 @@ export default function Home() {
             </a>
           </div>
 
-          <Button asChild size="sm" className="hidden md:inline-flex bg-amber-700 hover:bg-amber-800 text-white">
-            <a href="#services">
-              Book Session <ChevronRight className="ml-1 h-3.5 w-3.5" />
-            </a>
+          <Button
+            size="sm"
+            className="hidden md:inline-flex bg-amber-700 hover:bg-amber-800 text-white"
+            onClick={() => setBookingOpen(true)}
+          >
+            Book Session <ChevronRight className="ml-1 h-3.5 w-3.5" />
           </Button>
         </div>
       </nav>
@@ -178,13 +184,11 @@ export default function Home() {
               className="flex flex-col sm:flex-row gap-3 mt-2"
             >
               <Button
-                asChild
                 size="lg"
                 className="bg-amber-700 hover:bg-amber-800 text-white"
+                onClick={() => setBookingOpen(true)}
               >
-                <a href="#services">
-                  Book a Session <ArrowRight className="ml-2 h-4 w-4" />
-                </a>
+                Book a Session <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button asChild variant="outline" size="lg">
                 <a href="#services">Explore Services</a>
@@ -331,6 +335,14 @@ export default function Home() {
                     <p className="text-sm text-muted-foreground leading-relaxed flex-1">
                       {svc.description}
                     </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-auto w-full"
+                      onClick={() => setBookingOpen(true)}
+                    >
+                      Book This Service
+                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -560,6 +572,9 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {/* ─── BOOKING DIALOG ─── */}
+      <BookingDialog open={bookingOpen} onOpenChange={setBookingOpen} />
     </div>
   );
 }
