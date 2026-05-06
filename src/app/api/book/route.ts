@@ -87,10 +87,16 @@ function isSmtpConfigured(): boolean {
   return !!(process.env.SMTP_USER && process.env.SMTP_PASS);
 }
 
-/* ─── Save booking to database (non-critical) ─── */
+/* ─── Save booking to database (optional — won't fail the request) ─── */
 async function saveBooking(body: Record<string, string>): Promise<string | null> {
   try {
-    const { db } = await import("@/lib/db");
+    const { db, isDatabaseAvailable } = await import("@/lib/db");
+
+    if (!isDatabaseAvailable() || !db) {
+      console.warn("Database not available — skipping database save");
+      return null;
+    }
+
     const { name, dateOfBirth, country, purpose } = body;
 
     const booking = await db.booking.create({
@@ -115,7 +121,7 @@ async function saveBooking(body: Record<string, string>): Promise<string | null>
   }
 }
 
-/* ─── Send email via SMTP ─── */
+/* ─── Send email via SMTP (optional — won't fail the request) ─── */
 async function sendBookingEmail(
   body: Record<string, string>,
   purpose: string,
@@ -176,13 +182,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    /* ── Save to database (non-critical — won't fail the request) ── */
+    /* ── Save to database (optional — graceful skip if unavailable) ── */
     const bookingId = await saveBooking(body);
 
-    /* ── Send email notification (non-critical — won't fail the request) ── */
+    /* ── Send email notification (optional — graceful skip if unconfigured) ── */
     const emailSent = await sendBookingEmail(body, purpose, name);
 
-    /* ── Always return success as long as validation passes ── */
+    /* ── Success as long as validation passes ── */
     return NextResponse.json({
       success: true,
       bookingId,
