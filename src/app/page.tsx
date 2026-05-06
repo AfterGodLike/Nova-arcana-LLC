@@ -526,7 +526,7 @@ export default function Home() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Email
                     </p>
-                    <p className="text-sm font-medium">contact@novaarcana.com</p>
+                    <p className="text-sm font-medium">contact@novarcana.net</p>
                   </div>
                 </CardContent>
               </Card>
@@ -541,9 +541,9 @@ export default function Home() {
                       Business Address
                     </p>
                     <p className="text-sm font-medium">
-                      1234 Example St, Suite 100
+                      8206 Louisiana Blvd Ne, Ste A #9080
                       <br />
-                      Wilmington, DE 19801
+                      Albuquerque, NM 87113, US
                     </p>
                   </div>
                 </CardContent>
